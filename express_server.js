@@ -18,6 +18,15 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+ //TESTING CODE: a = 1 is block scoped, won't see it in,
+app.get("/set", (req, res) => {
+  const a = 1;
+  res.send(`a = ${a}`);
+ });
+ //THIS ONE: a is undefined.
+ app.get("/fetch", (req, res) => {
+  res.send(`a = ${a}`);
+ });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
