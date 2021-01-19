@@ -14,6 +14,10 @@ app.get("/urls", (req, res) => { //added 1st
   res.render("urls_index", templateVars);
 });
 
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 app.get("/urls/:shortURL", (req, res) => { // added 2nd
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] }; 
   //I have to use params.shortURL to access the name above ^^
