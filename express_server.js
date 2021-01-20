@@ -53,6 +53,11 @@ app.get("/urls/:shortURL", (req, res) => { // added 2nd
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  res.redirect(longURL);
+});
+
 // app.post('/memes', (req, res) => {
 //   // hendle adding the meme
 //   // body parser makes the body available in req.body as js object
