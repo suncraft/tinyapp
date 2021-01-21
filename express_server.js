@@ -1,10 +1,15 @@
+//config
 const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-
-app.use(bodyParser.urlencoded({extended: true}));
+const cookieParser = require("cookie-parser");
 app.set("view engine", "ejs");
+
+//middleware
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({extended: true}));
+
 
 // ###### MINE WASN'T WORKING ############
 // const urlDatabase = {
@@ -14,14 +19,33 @@ app.set("view engine", "ejs");
 
 
 let urlDatabase = {
-  "b2xVn2": { longURL: "http://www.lighthouselabs.ca" },
-  "9sm5xK": { longURL: "http://www.google.com" }
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "test1" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "test1" }
 };
 
+let users = { "test1": "one"};
+
+
+//routes
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
+
+//register
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"] };
+  res.render("register", templateVars);
+});
+
+// login
+app.get("/login", (req, res) => {
+  const templateVars = { username: req.cookies["username"] };
+  res.render("login", templateVars);
+});
+
+
 
 // ###### MINE WASN'T WORKING ############
 // ###### Error: TypeError: Cannot read property 'longURL' of undefined
@@ -35,6 +59,7 @@ app.get("/urls/new", (req, res) => {
 // });
 
 app.post('/urls', (req, res) => {
+    console.log(req.body); 
   let newShortURL = generateRandomString();
   urlDatabase[newShortURL] = {
     longURL: req.body.longURL
@@ -42,24 +67,38 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${newShortURL}`);
 });
 
+app.post('/login', (req, res) => {
+  console.log(req.body);
+  res.cookie("username", req.body.username);
+  res.redirect('/urls');
+});
+
+//logout
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls')
+});
+
 app.post('/urls/:shortURL/delete', (req, res) => {
+  console.log(`Deleting: ${urlDatabase[req.params.shortURL]}`); //?
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
 
 app.post('/urls/:shortURL/edit', (req, res) => {
   urlDatabase[req.params.shortURL].longURL = req.body.longURL
+  console.log(req.body); 
 
   res.redirect(`/urls`);
 });
 
 app.get("/urls", (req, res) => { //added 1st
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => { // added 2nd
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL }; 
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, username: req.cookies["username"] }; 
   //I have to use params.shortURL to access the name above ^^
   res.render("urls_show", templateVars);
 });
