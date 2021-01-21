@@ -62,6 +62,9 @@ app.post('/urls', (req, res) => {
 //login
 app.post('/login', (req, res) => {
   console.log(req.body);
+  if (idByEmail(req.body.email) === false) {
+    return res.send('403 Error');
+  }
   for (let user in users) {
     if (users[user].email === req.body.email) {
       if (users[user].password === req.body.password) {
@@ -70,7 +73,9 @@ app.post('/login', (req, res) => {
       }
     }
   }
-  res.redirect('/login');
+  return res.send('403 Error')
+
+  // setTimeout(res.redirect('/login'), 5000);
 });
 
 // register
