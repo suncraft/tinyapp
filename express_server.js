@@ -69,6 +69,12 @@ app.post('/login', (req, res) => {
 // register
 app.post('/register', (req, res) => {
   // console.log(req.body);
+  if (req.body.email === '' || req.body.password === '') {
+    return res.send('400 Error');
+  }
+  if (idByEmail(req.body.email) === true) {
+    return res.send('400 Error')
+  }
   const newID = generateRandomString();
   users[newID] = { id: newID, email: req.body.email, password: req.body.password }
   console.log(users);
@@ -125,15 +131,14 @@ function generateRandomString() {
 return Math.random().toString(36).substr(2, 6); //.substr(2, length) 
 };
 
-// let idByEmail = (users, email) => {
-//   for (let user in users) {
-//     console.log(user);
-//     if (users[user].email === email) {
-//       return true;
-//     }
-//   }
-//   return false;
-// };
+let idByEmail = (email) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
 
 const getEmailFunct = function (userid) {
   for (let user in users) {
