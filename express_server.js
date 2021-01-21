@@ -31,11 +31,12 @@ const users = {
 //routes
 
 app.get("/urls/new", (req, res) => {
-  let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { user_id: req.cookies["user_id"], email: email };
   if (!req.cookies["user_id"]) {
     return res.redirect('/login');
   }
+  let email = getEmailFunct(req.cookies["user_id"]);
+  const templateVars = { user_id: req.cookies["user_id"], email: email };
+  
   return res.render("urls_new", templateVars);
 });
 
@@ -58,8 +59,10 @@ app.post('/urls', (req, res) => {
     console.log(req.body); 
   let newShortURL = generateRandomString();
   urlDatabase[newShortURL] = {
-    longURL: req.body.longURL
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"]
   };
+  console.log(urlDatabase);
   res.redirect(`/urls/${newShortURL}`);
 });
 //login
