@@ -62,8 +62,15 @@ app.post('/urls', (req, res) => {
 //login
 app.post('/login', (req, res) => {
   console.log(req.body);
-  res.cookie("username", req.body.username);
-  res.redirect('/urls');
+  for (let user in users) {
+    if (users[user].email === req.body.email) {
+      if (users[user].password === req.body.password) {
+        res.cookie("user_id", users[user].id)
+        return res.redirect('/urls');
+      }
+    }
+  }
+  res.redirect('/login');
 });
 
 // register
