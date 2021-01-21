@@ -33,7 +33,10 @@ const users = {
 app.get("/urls/new", (req, res) => {
   let email = getEmailFunct(req.cookies["user_id"]);
   const templateVars = { user_id: req.cookies["user_id"], email: email };
-  res.render("urls_new", templateVars);
+  if (!req.cookies["user_id"]) {
+    return res.redirect('/login');
+  }
+  return res.render("urls_new", templateVars);
 });
 
 //register
