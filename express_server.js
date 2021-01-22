@@ -5,11 +5,19 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const bcrypt = require('bcrypt');
+const cookieSession = require('cookie-session')
 app.set("view engine", "ejs");
 
 //middleware
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieSession({
+  name: 'session',
+  keys: [ "bright lights", "shady nights" ],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 let urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
@@ -32,26 +40,26 @@ const users = {
 //routes
 
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.redirect('/login');
   }
-  let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { user_id: req.cookies["user_id"], email: email };
+  let email = getEmailFunct(req.session.user_id);
+  const templateVars = { user_id: req.session.user_id, email: email };
   
   res.render("urls_new", templateVars);
 });
 
 //register
 app.get("/register", (req, res) => {
-  let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { user_id: req.cookies["user_id"], email: email };
+  let email = getEmailFunct(req.session.user_id);
+  const templateVars = { user_id: req.session.user_id, email: email };
   res.render("register", templateVars);
 });
 
 // login
 app.get("/login", (req, res) => {
-  let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { user_id: req.cookies["user_id"], email: email };
+  let email = getEmailFunct(req.session.user_id);
+  const templateVars = { user_id: req.session.user_id, email: email };
   res.render("login", templateVars);
 });
 
@@ -61,7 +69,7 @@ app.post('/urls', (req, res) => {
   let newShortURL = generateRandomString();
   urlDatabase[newShortURL] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"]
+    userID: req.session.user_id
   };
   console.log(urlDatabase);
   res.redirect(`/urls/${newShortURL}`);
@@ -79,7 +87,7 @@ app.post('/login', (req, res) => {
   for (let user in users) {
     if (users[user].email === req.body.email) {
       if (bcrypt.compareSync(req.body.password, users[user].password)) { 
-        res.cookie("user_id", users[user].id)
+        req.session.user_id = users[user].id;
         return res.redirect('/urls');
       }
       }
@@ -123,18 +131,19 @@ app.post('/register', (req, res) => {
 
   users[newID] = { id: newID, email: req.body.email, password: newHashedPass }
   console.log(users);
-  res.cookie("user_id", users[newID].id)
+  req.session.user_id = users[newID].id;  //* new *
   res.redirect('/urls');
 });
 
 //logout
 app.post('/logout', (req, res) => {
+  req.session = null; //new
   res.clearCookie('user_id');
   res.redirect('/urls')
 });
 //delete short url
 app.post('/urls/:shortURL/delete', (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     return res.redirect('/login')
   }
   console.log(`Deleting: ${urlDatabase[req.params.shortURL]}`); //?
@@ -143,6 +152,9 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 });
 //edit short url
 app.post('/urls/:shortURL/edit', (req, res) => {
+  if (!req.session.user_id) {
+    return res.redirect('/urls');
+  }
   urlDatabase[req.params.shortURL].longURL = req.body.longURL
   console.log(req.body); 
 
@@ -151,31 +163,9 @@ app.post('/urls/:shortURL/edit', (req, res) => {
 
 //index page
 app.get("/urls", (req, res) => { //added 1st
-  // let newObj = {};
-  // if (!req.cookies.user_id) {
-    
-  // }
-  // if (req.cookies.user_id) {
-  //   // let newObj = {};
-  //   for (let shortURL in urlDatabase) {
-  //     if (urlDatabase[shortURL].userId === req.cookies.user_id) {
-  //       newObj[shortURL] = urlDatabase[shortURL];
-  //     }
-  //   }
-  //   console.log(newObj);;
-  // }
-  // console.log(newObj);
-  // Object.filter = (obj, predicate) => {
-  //   Object.keys(obj)
-  //         .filter( key => predicate(obj[key]) )
-  //         .reduce( (res, key) => (res[key] = obj[key], res), {} ) };
-
-  // var urls = Object.filter(urlDatabase, simpleID => simpleID.UserID === req.cookies.user_id);
-  // const urls = Object.fromEntries(Object.entries(urlDatabase).filter(([key, value]) => value === req.cookies["user_id"]))
-  // filterObj(req.cookies["user_id"], urlDatabase)
   let tempObj = {};
   for (let single in urlDatabase) {
-      if (urlDatabase[single]["userID"] === req.cookies["user_id"]) {
+      if (urlDatabase[single]["userID"] === req.session.user_id) {
       tempObj[single] = urlDatabase[single]; 
     }
   }; 
@@ -183,14 +173,14 @@ app.get("/urls", (req, res) => { //added 1st
 
 
   let urls = tempObj;
-  let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { urls: urls, user_id: req.cookies["user_id"], email: email };
+  let email = getEmailFunct(req.session.user_id);
+  const templateVars = { urls: urls, user_id: req.session.user_id, email: email };
   res.render("urls_index", templateVars);
 });
 //when refering to a short url
 app.get("/urls/:shortURL", (req, res) => { // added 2nd
-  let email = getEmailFunct(req.cookies["user_id"]); //do I need???
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user_id: req.cookies["user_id"], email: email}; 
+  let email = getEmailFunct(req.session.user_id); //do I need???
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user_id: req.session.user_id, email: email}; 
   //I have to use params.shortURL to access the name above ^^
   res.render("urls_show", templateVars);
 });
