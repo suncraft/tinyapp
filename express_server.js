@@ -3,13 +3,13 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session')
 app.set("view engine", "ejs");
 
 //middleware
-app.use(cookieParser());
+// app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
@@ -18,6 +18,29 @@ app.use(cookieSession({
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
+
+//helper functions 
+
+function generateRandomString() {
+  return Math.random().toString(36).substr(2, 6); //.substr(2, length) 
+};
+  
+const idByEmail = (email, database) => {
+  for (let user in database) {
+    if (database[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const getEmailFunct = function (userid, database) {
+  for (let user in database) {
+    if (database[user].id === userid) {
+      return database[user].email;
+    }
+  }
+};
 
 let urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
@@ -43,7 +66,7 @@ app.get("/urls/new", (req, res) => {
   if (!req.session.user_id) {
     return res.redirect('/login');
   }
-  let email = getEmailFunct(req.session.user_id);
+  let email = getEmailFunct(req.session.user_id, users);
   const templateVars = { user_id: req.session.user_id, email: email };
   
   res.render("urls_new", templateVars);
@@ -51,14 +74,14 @@ app.get("/urls/new", (req, res) => {
 
 //register
 app.get("/register", (req, res) => {
-  let email = getEmailFunct(req.session.user_id);
+  let email = getEmailFunct(req.session.user_id, users);
   const templateVars = { user_id: req.session.user_id, email: email };
   res.render("register", templateVars);
 });
 
 // login
 app.get("/login", (req, res) => {
-  let email = getEmailFunct(req.session.user_id);
+  let email = getEmailFunct(req.session.user_id, users);
   const templateVars = { user_id: req.session.user_id, email: email };
   res.render("login", templateVars);
 });
@@ -81,8 +104,8 @@ app.post('/urls', (req, res) => {
 
 app.post('/login', (req, res) => {
   console.log(req.body);
-  if (idByEmail(req.body.email) === false) {
-    return res.send('403 Error');
+  if (idByEmail(req.body.email, users) === false) {
+    return res.send('403 Error from function');
   }
   for (let user in users) {
     if (users[user].email === req.body.email) {
@@ -92,7 +115,7 @@ app.post('/login', (req, res) => {
       }
       }
     }
-    return res.send('403 Error')
+    return res.send('403 Error from last res')
   });
 
   // setTimeout(res.redirect('/login'), 5000);
@@ -123,7 +146,7 @@ app.post('/register', (req, res) => {
   if (req.body.email === '' || req.body.password === '') {
     return res.send('400 Error');
   }
-  if (idByEmail(req.body.email) === true) {
+  if (idByEmail(req.body.email, urlDatabase) === true) {
     return res.send('400 Error')
   }
   const newID = generateRandomString();
@@ -138,7 +161,7 @@ app.post('/register', (req, res) => {
 //logout
 app.post('/logout', (req, res) => {
   req.session = null; //new
-  res.clearCookie('user_id');
+  // res.clearCookie('user_id');
   res.redirect('/urls')
 });
 //delete short url
@@ -164,22 +187,21 @@ app.post('/urls/:shortURL/edit', (req, res) => {
 //index page
 app.get("/urls", (req, res) => { //added 1st
   let tempObj = {};
-  for (let single in urlDatabase) {
-      if (urlDatabase[single]["userID"] === req.session.user_id) {
-      tempObj[single] = urlDatabase[single]; 
+  for (let singleURL in urlDatabase) {
+      if (urlDatabase[singleURL]["userID"] === req.session.user_id) {
+      tempObj[singleURL] = urlDatabase[singleURL]; 
     }
   }; 
   // console.log(tempObj);
-
-
   let urls = tempObj;
-  let email = getEmailFunct(req.session.user_id);
+  let email = getEmailFunct(req.session.user_id, users);
   const templateVars = { urls: urls, user_id: req.session.user_id, email: email };
   res.render("urls_index", templateVars);
 });
+
 //when refering to a short url
 app.get("/urls/:shortURL", (req, res) => { // added 2nd
-  let email = getEmailFunct(req.session.user_id); //do I need???
+  let email = getEmailFunct(req.session.user_id, users); //do I need???
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user_id: req.session.user_id, email: email}; 
   //I have to use params.shortURL to access the name above ^^
   res.render("urls_show", templateVars);
@@ -198,37 +220,8 @@ app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
 
-//helper functions 
-function generateRandomString() {
-return Math.random().toString(36).substr(2, 6); //.substr(2, length) 
-};
 
-let idByEmail = (email) => {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
 
-const getEmailFunct = function (userid) {
-  for (let user in users) {
-    if (users[user].id === userid) {
-      return users[user].email;
-    }
-  }
-};
-
-let urlsForUser = (id) => {
-  let urlsObj = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userId == id) {
-      urlsObj[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return urlsObj;
-};
 
 
 // function filterObj(keys, obj) {
