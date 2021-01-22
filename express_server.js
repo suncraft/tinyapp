@@ -4,6 +4,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcrypt');
 app.set("view engine", "ejs");
 
 //middleware
@@ -46,6 +47,17 @@ app.get("/register", (req, res) => {
   const templateVars = { user_id: req.cookies["user_id"], email: email };
   res.render("register", templateVars);
 });
+
+// //future register from lecture
+// bcrypt.genSalt(10, (err, salt) => {
+//   bcrypt.hash(plaintextpassword, salt, (err, hash) => {
+//     console.log(hash);
+//   })
+// })
+// // comparing
+// bcrypt.compare('12345plaintextpass', hashed, (err, result) => { //true or false
+//   console.log(result);
+// });
 
 // login
 app.get("/login", (req, res) => {
@@ -181,6 +193,7 @@ app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
 
+//helper functions 
 function generateRandomString() {
 return Math.random().toString(36).substr(2, 6); //.substr(2, length) 
 };
