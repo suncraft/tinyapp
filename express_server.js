@@ -107,6 +107,9 @@ app.post('/logout', (req, res) => {
 });
 //delete short url
 app.post('/urls/:shortURL/delete', (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.redirect('/login')
+  }
   console.log(`Deleting: ${urlDatabase[req.params.shortURL]}`); //?
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
@@ -118,9 +121,8 @@ app.post('/urls/:shortURL/edit', (req, res) => {
 
   res.redirect(`/urls`);
 });
+
 //index page
-
-
 app.get("/urls", (req, res) => { //added 1st
   // let newObj = {};
   // if (!req.cookies.user_id) {
@@ -136,8 +138,26 @@ app.get("/urls", (req, res) => { //added 1st
   //   console.log(newObj);;
   // }
   // console.log(newObj);
+  // Object.filter = (obj, predicate) => {
+  //   Object.keys(obj)
+  //         .filter( key => predicate(obj[key]) )
+  //         .reduce( (res, key) => (res[key] = obj[key], res), {} ) };
+
+  // var urls = Object.filter(urlDatabase, simpleID => simpleID.UserID === req.cookies.user_id);
+  // const urls = Object.fromEntries(Object.entries(urlDatabase).filter(([key, value]) => value === req.cookies["user_id"]))
+  // filterObj(req.cookies["user_id"], urlDatabase)
+  let tempObj = {};
+  for (let single in urlDatabase) {
+      if (urlDatabase[single]["userID"] === req.cookies["user_id"]) {
+      tempObj[single] = urlDatabase[single]; 
+    }
+  }; 
+  // console.log(tempObj);
+
+
+  let urls = tempObj;
   let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user_id: req.cookies["user_id"], email: email };
+  const templateVars = { urls: urls, user_id: req.cookies["user_id"], email: email };
   res.render("urls_index", templateVars);
 });
 //when refering to a short url
@@ -185,12 +205,24 @@ const getEmailFunct = function (userid) {
 let urlsForUser = (id) => {
   let urlsObj = {};
   for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userId === id) {
+    if (urlDatabase[shortURL].userId == id) {
       urlsObj[shortURL] = urlDatabase[shortURL];
     }
   }
   return urlsObj;
 };
+
+
+// function filterObj(keys, obj) {
+//   const newObj = {};
+//   Object.keys(obj).forEach(key => {
+//     if (keys.includes(key)) {
+//       newObj[key] = obj[key];
+//     }
+//   });
+//   return newObj;
+// };
+
 
 
 // //future register from lecture
