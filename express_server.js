@@ -48,17 +48,6 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
-// //future register from lecture
-// bcrypt.genSalt(10, (err, salt) => {
-//   bcrypt.hash(plaintextpassword, salt, (err, hash) => {
-//     console.log(hash);
-//   })
-// })
-// // comparing
-// bcrypt.compare('12345plaintextpass', hashed, (err, result) => { //true or false
-//   console.log(result);
-// });
-
 // login
 app.get("/login", (req, res) => {
   let email = getEmailFunct(req.cookies["user_id"]);
@@ -78,6 +67,10 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${newShortURL}`);
 });
 //login
+
+// console.log(bcrypt.compareSync("this123", hashedPassword));
+// console.log(bcrypt.compareSync("this12", hashedPassword));
+
 app.post('/login', (req, res) => {
   console.log(req.body);
   if (idByEmail(req.body.email) === false) {
@@ -85,16 +78,36 @@ app.post('/login', (req, res) => {
   }
   for (let user in users) {
     if (users[user].email === req.body.email) {
-      if (users[user].password === req.body.password) {
+      if (bcrypt.compareSync(req.body.password, users[user].password)) { 
         res.cookie("user_id", users[user].id)
         return res.redirect('/urls');
       }
+      }
     }
-  }
-  return res.send('403 Error')
+    return res.send('403 Error')
+  });
 
   // setTimeout(res.redirect('/login'), 5000);
-});
+
+// if (users[user].password === req.body.password) 
+
+// //future register from lecture
+// bcrypt.genSalt(10, (err, salt) => {
+//   bcrypt.hash(plaintextpassword, salt, (err, hash) => {
+//     console.log(hash);
+//   })
+// })
+// comparing
+// bcrypt.compare('12345plaintextpass', hashed, (err, result) => { //true or false
+//   console.log(result);
+// });
+// let username = "newtest";
+// const mypass = "this123";
+// const hashedPassword = bcrypt.hashSync(mypass, 10);
+// console.log(hashedPassword);
+
+// console.log(bcrypt.compareSync("this123", hashedPassword));
+// console.log(bcrypt.compareSync("this12", hashedPassword));
 
 // register
 app.post('/register', (req, res) => {
@@ -106,7 +119,9 @@ app.post('/register', (req, res) => {
     return res.send('400 Error')
   }
   const newID = generateRandomString();
-  users[newID] = { id: newID, email: req.body.email, password: req.body.password }
+  const newHashedPass = bcrypt.hashSync(req.body.password, 10);
+
+  users[newID] = { id: newID, email: req.body.email, password: newHashedPass }
   console.log(users);
   res.cookie("user_id", users[newID].id)
   res.redirect('/urls');
