@@ -37,7 +37,7 @@ app.get("/urls/new", (req, res) => {
   let email = getEmailFunct(req.cookies["user_id"]);
   const templateVars = { user_id: req.cookies["user_id"], email: email };
   
-  return res.render("urls_new", templateVars);
+  res.render("urls_new", templateVars);
 });
 
 //register
@@ -119,9 +119,25 @@ app.post('/urls/:shortURL/edit', (req, res) => {
   res.redirect(`/urls`);
 });
 //index page
+
+
 app.get("/urls", (req, res) => { //added 1st
+  // let newObj = {};
+  // if (!req.cookies.user_id) {
+    
+  // }
+  // if (req.cookies.user_id) {
+  //   // let newObj = {};
+  //   for (let shortURL in urlDatabase) {
+  //     if (urlDatabase[shortURL].userId === req.cookies.user_id) {
+  //       newObj[shortURL] = urlDatabase[shortURL];
+  //     }
+  //   }
+  //   console.log(newObj);;
+  // }
+  // console.log(newObj);
   let email = getEmailFunct(req.cookies["user_id"]);
-  const templateVars = { urls: urlDatabase, user_id: req.cookies["user_id"], email: email };
+  const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user_id: req.cookies["user_id"], email: email };
   res.render("urls_index", templateVars);
 });
 //when refering to a short url
@@ -164,6 +180,16 @@ const getEmailFunct = function (userid) {
       return users[user].email;
     }
   }
+};
+
+let urlsForUser = (id) => {
+  let urlsObj = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userId === id) {
+      urlsObj[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return urlsObj;
 };
 
 
