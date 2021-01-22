@@ -3,7 +3,6 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-// const cookieParser = require("cookie-parser");
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
 
@@ -12,14 +11,11 @@ const { generateRandomString, idByEmail, getEmailFunct } = require("./helpers.js
 app.set("view engine", "ejs");
 
 //middleware
-// app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: [ "bright lights", "shady nights" ],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  maxAge: 24 * 60 * 60 * 1000
 }));
 
 let urlDatabase = {
@@ -141,8 +137,7 @@ app.post('/register', (req, res) => {
 
 //logout
 app.post('/logout', (req, res) => {
-  req.session = null; //new
-  // res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/urls');
 });
 //delete short url
