@@ -6,6 +6,9 @@ const bodyParser = require("body-parser");
 // const cookieParser = require("cookie-parser");
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session')
+
+const { generateRandomString, idByEmail, getEmailFunct } = require("./helpers.js");
+
 app.set("view engine", "ejs");
 
 //middleware
@@ -19,29 +22,6 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
 
-//helper functions 
-
-function generateRandomString() {
-  return Math.random().toString(36).substr(2, 6); //.substr(2, length) 
-};
-  
-const idByEmail = (email, database) => {
-  for (let user in database) {
-    if (database[user].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const getEmailFunct = function (userid, database) {
-  for (let user in database) {
-    if (database[user].id === userid) {
-      return database[user].email;
-    }
-  }
-};
-
 let urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
   "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID" }
@@ -51,14 +31,15 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "$2b$10$YzA9gKgZovqwHlImFQLK5uzdkCS30Nq64GZfn3fStuRewv4MUzMd6"
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: "$2b$10$/WruIgXKlREbuTM0QmDzP.EgHPGDls9qhEAtCeTOz.WXUO.KXk3xW"
   }
-}
+  //purple, and dishwasher, are the passwords for testing
+};
 
 //routes
 
@@ -169,7 +150,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   if (!req.session.user_id) {
     return res.redirect('/login')
   }
-  console.log(`Deleting: ${urlDatabase[req.params.shortURL]}`); //?
+  console.log(`Deleting: ${urlDatabase[req.params.shortURL]}`);
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
@@ -201,19 +182,28 @@ app.get("/urls", (req, res) => { //added 1st
 
 //when refering to a short url
 app.get("/urls/:shortURL", (req, res) => { // added 2nd
-  let email = getEmailFunct(req.session.user_id, users); //do I need???
+  if (!req.session.user_id) {
+    return res.redirect('/urls');
+  }
+  let email = getEmailFunct(req.session.user_id, users);
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user_id: req.session.user_id, email: email}; 
   //I have to use params.shortURL to access the name above ^^
   res.render("urls_show", templateVars);
 });
 //redirecting to the endpoint long url
 app.get("/u/:shortURL", (req, res) => {
+  if (req.params.shortURL != urlDatabase[req.params.shortURL]) {
+    return res.redirect('/urls');
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello");
+  if (!req.session.user_id) {
+    return res.redirect('/login')
+  }
+  res.redirect("urls");
 })
 
 app.listen(PORT, () => {
