@@ -74,11 +74,8 @@ app.post('/urls', (req, res) => {
   console.log(urlDatabase);
   res.redirect(`/urls/${newShortURL}`);
 });
+
 //login
-
-// console.log(bcrypt.compareSync("this123", hashedPassword));
-// console.log(bcrypt.compareSync("this12", hashedPassword));
-
 app.post('/login', (req, res) => {
   console.log(req.body);
   if (idByEmail(req.body.email, users) === false) {
@@ -94,28 +91,6 @@ app.post('/login', (req, res) => {
   }
   return res.send('403 Error from last res');
 });
-
-// setTimeout(res.redirect('/login'), 5000);
-
-// if (users[user].password === req.body.password)
-
-// //future register from lecture
-// bcrypt.genSalt(10, (err, salt) => {
-//   bcrypt.hash(plaintextpassword, salt, (err, hash) => {
-//     console.log(hash);
-//   })
-// })
-// comparing
-// bcrypt.compare('12345plaintextpass', hashed, (err, result) => { //true or false
-//   console.log(result);
-// });
-// let username = "newtest";
-// const mypass = "this123";
-// const hashedPassword = bcrypt.hashSync(mypass, 10);
-// console.log(hashedPassword);
-
-// console.log(bcrypt.compareSync("this123", hashedPassword));
-// console.log(bcrypt.compareSync("this12", hashedPassword));
 
 // register
 app.post('/register', (req, res) => {
@@ -145,6 +120,9 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   if (!req.session.user_id) {
     return res.redirect('/login');
   }
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
+    return res.redirect('/urls');
+  }
   console.log(`Deleting: ${urlDatabase[req.params.shortURL]}`);
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
@@ -152,8 +130,12 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 //edit short url
 app.post('/urls/:shortURL/edit', (req, res) => {
   if (!req.session.user_id) {
+    return res.redirect('/login');
+  }
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     return res.redirect('/urls');
   }
+  
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   console.log(req.body);
 
@@ -178,6 +160,9 @@ app.get("/urls", (req, res) => { //added 1st
 //when refering to a short url
 app.get("/urls/:shortURL", (req, res) => { // added 2nd
   if (!req.session.user_id) {
+    return res.redirect('/login');
+  }
+  if (req.session.user_id !== urlDatabase[req.params.shortURL].userID) {
     return res.redirect('/urls');
   }
   let email = getEmailFunct(req.session.user_id, users);
@@ -187,9 +172,6 @@ app.get("/urls/:shortURL", (req, res) => { // added 2nd
 });
 //redirecting to the endpoint long url
 app.get("/u/:shortURL", (req, res) => {
-  if (req.params.shortURL !== urlDatabase[req.params.shortURL]) {
-    return res.redirect('/urls');
-  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -204,30 +186,3 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`TinyApp listening on port ${PORT}!`);
 });
-
-
-
-
-
-// function filterObj(keys, obj) {
-//   const newObj = {};
-//   Object.keys(obj).forEach(key => {
-//     if (keys.includes(key)) {
-//       newObj[key] = obj[key];
-//     }
-//   });
-//   return newObj;
-// };
-
-
-
-// //future register from lecture
-// bcrypt.genSalt(10, (err, salt) => {
-//   bcrypt.hash(plaintextpassword, salt, (err, hash) => {
-//     console.log(hash);
-//   })
-// })
-//comparing
-// bcrypt.compare('12345plaintextpass', hashed, (err, result) => { //true or false
-//   console.log(result);
-// });
