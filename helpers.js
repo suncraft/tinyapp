@@ -1,5 +1,5 @@
 
-//helper functions 
+//helper functions
 
 // generates ids for both usernames and new short urls
 const generateRandomString = () => {
