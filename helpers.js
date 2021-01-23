@@ -1,6 +1,7 @@
 
 //helper functions 
 
+// generates ids for both usernames and new short urls
 const generateRandomString = () => {
   return Math.random().toString(36).substr(2, 6); //.substr(2, length) is how it's used
 };
